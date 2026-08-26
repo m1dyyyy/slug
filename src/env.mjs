@@ -8,18 +8,19 @@ export const env = createEnv({
       .refine(
         (str) => !str.includes("YOUR_MYSQL_URL_HERE"),
         "You forgot to change the default URL",
-      ),
-    TURSO_DATABASE_URL: z.string(),
-    TURSO_AUTH_TOKEN: z.string(),
+      )
+      .optional(),
+    TURSO_DATABASE_URL: z.string().optional(),
+    TURSO_AUTH_TOKEN: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    AUTH_SECRET: z.string(),
-    //AUTH_URL: z.string(),
-    GITHUB_ID: z.string(),
-    GITHUB_CLIENT_SECRET: z.string(),
-    GOOGLE_ID: z.string(),
-    GOOGLE_CLIENT_SECRET: z.string(),
+    AUTH_SECRET: z.string().optional(),
+    //AUTH_URL: z.string().optional(),
+    GITHUB_ID: z.string().optional(),
+    GITHUB_CLIENT_SECRET: z.string().optional(),
+    GOOGLE_ID: z.string().optional(),
+    GOOGLE_CLIENT_SECRET: z.string().optional(),
   },
   runtimeEnv: {
     TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL,
