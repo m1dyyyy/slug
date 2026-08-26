@@ -1,59 +1,196 @@
-import Footer from "@/components/layout/footer";
-import { GithubLogo } from "@/components/icons/logos";
-import { buttonVariants } from "@/ui/button";
-import ExternalLink from "@/ui/external-link";
-import { TypographyH1, TypographyP } from "@/ui/typography";
-import { LinkIcon } from "lucide-react";
-import Link from "next/link";
+"use client";
 
-export default async function Home() {
+import { useState } from "react";
+
+export default function Home() {
+  const [url, setUrl] = useState("");
+  const [subdomain, setSubdomain] = useState("s1");
+  const [shortLink, setShortLink] = useState("");
+  const [copied, setCopied] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const handleShorten = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!url) return;
+    setLoading(true);
+
+    try {
+      // Генерируем случайный короткий ID (6 символов)
+      const id = Math.random().toString(36).substring(2, 8);
+      
+      // Определяем базовый домен текущего сайта
+      const currentHost = window.location.host;
+      const domainParts = currentHost.split(".");
+      // Если у нас уже есть поддомен, берем основной домен, иначе используем текущий
+      const baseDomain = domainParts.length > 2 ? domainParts.slice(1).join(".") : currentHost;
+      
+      const finalSub = subdomain.trim() || "s1";
+      const generatedUrl = `https://${finalSub}.${baseDomain}/${id}`;
+
+      // Сохраняем в localStorage для демонстрации или отправляем в API
+      // В реальной работе здесь будет запись в KV/базу, но для работы без БД на фронте сохраним связь
+      localStorage.setItem(id, url);
+
+      setShortLink(generatedUrl);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(shortLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
-    <main className="relative h-[calc(100vh-4rem)]">
-      <div className="absolute inset-0 -z-10 h-full w-full bg-white bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:14px_24px] dark:bg-neutral-900"></div>
-      <section
-        id="hero"
-        className="flex flex-col items-center px-6 pt-16 text-center md:pt-24 lg:pt-32"
-      >
-        <TypographyH1 className="max-w-[75ch] duration-500 animate-in fade-in-5 slide-in-from-bottom-2">
-          Enhance Your Link Management
-        </TypographyH1>
-        <TypographyP className="max-w-[75ch] text-sm duration-700 animate-in fade-in-5 slide-in-from-top-2 md:text-base [&:not(:first-child)]:mt-6">
-          Slug is an open-source platform that allows you to create, manage, and
-          share short links with ease. It's fast, secure, and easy to use.
-        </TypographyP>
-        <div className="mt-8 flex items-center justify-center duration-700 animate-in fade-in-30 md:space-x-3 space-x-2">
-          <Link
-            href="/dashboard"
-            className={buttonVariants({
-              variant: "default",
-              className: "group",
-              size: "lg",
-            })}
-          >
-            <LinkIcon
-              size={18}
-              className="duration-300 group-hover:rotate-[14deg]"
+    <main style={styles.main}>
+      <div style={styles.container}>
+        <h1 style={styles.title}>SYDAR Links</h1>
+        <p style={styles.subtitle}>Быстрый и защищенный сокращатель ссылок с поддержкой поддоменов</p>
+
+        <form onSubmit={handleShorten} style={styles.form}>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Целевая ссылка</label>
+            <input
+              type="url"
+              placeholder="https://example.com/very-long-url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              required
+              style={styles.input}
             />
-            <span>Create a Link</span>
-          </Link>
-          <ExternalLink
-            href="https://github.com/pheralb/slug"
-            className={buttonVariants({
-              variant: "expandIcon",
-              size: "lg",
-              className: "group",
-            })}
-          >
-            <GithubLogo
-              height={18}
-              className="duration-300
-                 group-hover:-rotate-[10deg]"
+          </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Поддомен (для защиты от блокировок)</label>
+            <input
+              type="text"
+              placeholder="например: s1, go, click"
+              value={subdomain}
+              onChange={(e) => setSubdomain(e.target.value)}
+              required
+              style={styles.input}
             />
-            <span>Star on GitHub</span>
-          </ExternalLink>
-        </div>
-      </section>
-      <Footer className="fixed bottom-0 mt-4 py-4" />
+          </div>
+
+          <button type="submit" disabled={loading} style={styles.button}>
+            {loading ? "Создание..." : "Сократить ссылку"}
+          </button>
+        </form>
+
+        {shortLink && (
+          <div style={styles.resultBox}>
+            <span style={styles.resultText}>{shortLink}</span>
+            <button onClick={copyToClipboard} style={styles.copyButton}>
+              {copied ? "Скопировано!" : "Копировать"}
+            </button>
+          </div>
+        )}
+      </div>
     </main>
   );
 }
+
+const styles = {
+  main: {
+    minHeight: "100vh",
+    backgroundColor: "#0a0a0a",
+    color: "#ffffff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontFamily: "system-ui, -apple-system, sans-serif",
+    padding: "20px",
+  },
+  container: {
+    width: "100%",
+    maxWidth: "480px",
+    backgroundColor: "#121212",
+    border: "1px solid #222",
+    borderRadius: "16px",
+    padding: "32px",
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4)",
+  },
+  title: {
+    fontSize: "32px",
+    fontWeight: "800",
+    textAlign: "center" as const,
+    marginBottom: "8px",
+    letterSpacing: "-0.5px",
+    color: "#ffffff",
+  },
+  subtitle: {
+    fontSize: "14px",
+    color: "#888",
+    textAlign: "center" as const,
+    marginBottom: "32px",
+  },
+  form: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "20px",
+  },
+  inputGroup: {
+    display: "flex",
+    flexDirection: "column" as const,
+    gap: "8px",
+  },
+  label: {
+    fontSize: "13px",
+    fontWeight: "500",
+    color: "#aaa",
+  },
+  input: {
+    width: "100%",
+    padding: "12px 16px",
+    backgroundColor: "#1a1a1a",
+    border: "1px solid #333",
+    borderRadius: "8px",
+    color: "#fff",
+    fontSize: "15px",
+    outline: "none",
+    transition: "border-color 0.2s",
+  },
+  button: {
+    marginTop: "8px",
+    width: "100%",
+    padding: "14px",
+    backgroundColor: "#ffffff",
+    color: "#000000",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "16px",
+    fontWeight: "600",
+    cursor: "pointer",
+    transition: "opacity 0.2s",
+  },
+  resultBox: {
+    marginTop: "24px",
+    padding: "12px 16px",
+    backgroundColor: "#1a1a1a",
+    border: "1px solid #333",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: "12px",
+  },
+  resultText: {
+    fontSize: "14px",
+    color: "#4ade80",
+    wordBreak: "break-all" as const,
+  },
+  copyButton: {
+    padding: "6px 12px",
+    backgroundColor: "#333",
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "13px",
+    cursor: "pointer",
+    whiteSpace: "nowrap" as const,
+  },
+};
